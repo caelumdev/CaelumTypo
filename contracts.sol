@@ -441,6 +441,7 @@ contract CaelumVotings {
     mapping(uint => address) public voterProposals;
     uint public proposalCounter;
     uint public votersCount;
+    uint public votersCountTeam;
 
     /**
      * @notice Define abstract functions for later user
@@ -555,6 +556,9 @@ contract CaelumVotings {
         voterMap[msg.sender].owner = msg.sender;
         voterMap[msg.sender].isVoter = true;
         votersCount = votersCount + 1;
+
+        if (isTeamMember(msg.sender))
+        votersCountTeam = votersCountTeam + 1;
     }
 
     /**
@@ -568,21 +572,33 @@ contract CaelumVotings {
         require(proposalID >= 0, "No proposal was selected.");
         require(proposalID <= proposalCounter, "Proposal out of limits.");
         require(voterProposals[proposalID] != msg.sender, "Already voted.");
-        require(votersCount >= MINIMUM_VOTERS_NEEDED, "Not enough voters in existence to push a proposal");
+
 
         if(proposalList[proposalID].proposalType == VOTE_TYPE.TEAM) {
             require (isTeamMember(msg.sender), "Restricted for team members");
+            voterProposals[proposalID] = msg.sender;
+            proposalList[proposalID].totalVotes++;
+
+            if(reachedMajorityForTeam(proposalID)) {
+                // This is the prefered way of handling vote results. It costs more gas but prevents tampering.
+                // If gas is an issue, you can comment handleLastProposal out and call it manually as onlyOwner.
+                handleLastProposal();
+                return true;
+            }
+        } else {
+            require(votersCount >= MINIMUM_VOTERS_NEEDED, "Not enough voters in existence to push a proposal");
+            voterProposals[proposalID] = msg.sender;
+            proposalList[proposalID].totalVotes++;
+
+            if(reachedMajority(proposalID)) {
+                // This is the prefered way of handling vote results. It costs more gas but prevents tampering.
+                // If gas is an issue, you can comment handleLastProposal out and call it manually as onlyOwner.
+                handleLastProposal();
+                return true;
+            }
         }
 
-        voterProposals[proposalID] = msg.sender;
-        proposalList[proposalID].totalVotes++;
 
-        if(reachedMajority(proposalID)) {
-            // This is the prefered way of handling vote results. It costs more gas but prevents tampering.
-            // If gas is an issue, you can comment handleLastProposal out and call it manually as onlyOwner.
-            handleLastProposal();
-            return true;
-        }
     }
 
     /**
@@ -602,6 +618,26 @@ contract CaelumVotings {
      */
     function majority () internal view returns (uint) {
         uint a = (votersCount * MAJORITY_PERCENTAGE_NEEDED );
+        return a / 100;
+    }
+
+    /**
+     * @dev Check if a proposal has reached the majority vote for a team member
+     * @param proposalID Token ID
+     * @return bool
+     */
+    function reachedMajorityForTeam (uint proposalID) public view returns (bool) {
+        uint getProposalVotes = proposalList[proposalID].totalVotes;
+        if (getProposalVotes >= majorityForTeam())
+        return true;
+    }
+
+    /**
+     * @dev Internal function that calculates the majority
+     * @return uint Total of votes needed for majority
+     */
+    function majorityForTeam () internal view returns (uint) {
+        uint a = (votersCountTeam * MAJORITY_PERCENTAGE_NEEDED );
         return a / 100;
     }
 
@@ -831,10 +867,22 @@ contract CaelumMasternode is Ownable, CaelumFundraise, CaelumVotings, CaelumAcce
     /**
      * @dev Add the genesis accounts
      */
-    function addGenesis() public {
+    function addGenesis(address _genesis, bool _team) onlyOwner public {
         require(!genesisAdded);
-        addMasternode(msg.sender);
-        updateMasternodeAsTeamMember(msg.sender);
+
+        addMasternode(_genesis);
+
+        if (_team) {
+            updateMasternodeAsTeamMember(msg.sender);
+        }
+
+        genesisAdded = true; // Forever lock this.
+    }
+
+    /**
+     * @dev Close the genesis accounts
+     */
+    function closeGenesis() onlyOwner public {
         genesisAdded = true; // Forever lock this.
     }
 
