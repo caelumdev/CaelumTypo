@@ -372,7 +372,6 @@ contract NewTokenProposal is votingContract {
     uint validUntil;
     uint votingDurationInDays;
 
-
     /**
      * @dev Create a new vote proposal for an ERC20 token.
      * @param _contract ERC20 contract
