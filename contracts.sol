@@ -339,7 +339,7 @@ contract NewMemberProposal is votingContract {
     }
 
     /**
-     * @dev Retuns all details about this proposal
+     * @dev Returns all details about this proposal
      */
     function getTokenProposalDetails() public view returns(address, uint, uint, uint) {
         return (memberAddress, totalMasternodes, 0, uint(contractType));
@@ -390,7 +390,7 @@ contract NewTokenProposal is votingContract {
     }
 
     /**
-     * @dev Retuns all details about this proposal
+     * @dev Returns all details about this proposal
      */
     function getTokenProposalDetails() public view returns(address, uint, uint, uint) {
         return (contractAddress, requiredAmount, validUntil, uint(contractType));
