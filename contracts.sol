@@ -915,7 +915,7 @@ contract CaelumMasternode is Ownable, CaelumFundraise, CaelumVotings, CaelumAcce
     }
 
     /**
-     * @dev Internal function to remove a masternode from a user address if this address holds multple masternodes
+     * @dev Internal function to remove a masternode from a user address if this address holds multpile masternodes
      * @param index MasternodeID
      */
     function removeFromUserCounter(uint index)  internal returns(uint[]) {
@@ -971,7 +971,7 @@ contract CaelumMasternode is Ownable, CaelumFundraise, CaelumVotings, CaelumAcce
     }
 
     /**
-     * @dev Helper function to loop trough our masternodes at start and return the correct round
+     * @dev Helper function to loop through our masternodes at start and return the correct round
      */
     function getFollowingCandidate() internal view returns(address _address) {
         uint tmpRound = masternodeRound;
